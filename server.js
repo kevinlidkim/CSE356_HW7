@@ -27,15 +27,6 @@ var connection = mysql.createConnection({
   database : 'hw7'
 });
 
-connection.connect(function(err) {
-  if (err) {
-    console.error('error connecting: ' + err.stack);
-    return;
-  }
-
-  console.log('connected as id ' + connection.threadId);
-});
-
 var Memcached = require('memcached');
 var memcached = new Memcached('127.0.0.1:11211');
 
@@ -56,6 +47,9 @@ app.post('/hw7', function(req, res) {
   if (req.body.state) {
     if (req.body.service_type) {
 
+      console.log('');
+      console.log('');
+
       memcached.touch(key, 60, function(err) {
         if (err) {
           console.log(err);
@@ -66,7 +60,7 @@ app.post('/hw7', function(req, res) {
           })
 
         } else {
-          console.log('we made it into memcache?');
+          console.log('touch key success');
           memcached.get(key, function(error, data) {
             if (error) {
               console.log('error getting key');
@@ -106,13 +100,55 @@ app.post('/hw7', function(req, res) {
               })
 
             } else {
-              console.log(data);
-              console.log('we should be getting item from memcached here');
 
-              return res.status(200).json({
-                status: 'OK',
-                data: data
-              })
+              console.log('no error touching key');
+
+              if (data) {
+                console.log('we should be getting item from memcached here');
+                console.log(data);
+                return res.status(200).json({
+                  status: 'OK',
+                  data: data
+                })
+              } else {
+
+                console.log('no results from key');
+
+                connection.query({
+                  sql: query_string,
+                  values: [req.body.state, req.body.service_type]
+                }, function(error, results, fields) {
+                  if (error) {
+                    console.log('error querying mysql');
+                    console.log(error);
+                    return res.status(500).json({
+                      status: 'error',
+                      error: 'failed to query'
+                    })
+                  } else {
+                    var obj = results[0];
+                    memcached.set(key, obj, 60, function(err_set) {
+                      if (err_set) {
+                        console.log('error setting key');
+                        console.log(err_set)
+                        return res.status(500).json({
+                          status: 'error',
+                          error: 'error setting key'
+                        })
+                      } else {
+                        return res.status(200).json({
+                          status: 'OK',
+                          comm_rate_avg: results[0]['AVG(comm_rate)'],
+                          ind_rate_avg: results[0]['AVG(ind_rate)'],
+                          res_rate_avg: results[0]['AVG(res_rate)']
+                        })
+                      }
+                    })
+                  }
+
+              }
+
+              
 
             }
           })
