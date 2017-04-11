@@ -48,10 +48,10 @@ app.post('/hw7', function(req, res) {
     if (req.body.service_type) {
 
       console.log('');
-      console.log('');
 
       memcached.touch(key, 60, function(err) {
         if (err) {
+          console.log('touched key error')
           console.log(err);
 
           return res.status(500).json({
@@ -60,7 +60,7 @@ app.post('/hw7', function(req, res) {
           })
 
         } else {
-          console.log('touch key success');
+          console.log('touched key success');
           memcached.get(key, function(error, data) {
             if (error) {
               console.log('error getting key');
@@ -101,7 +101,7 @@ app.post('/hw7', function(req, res) {
 
             } else {
 
-              console.log('no error touching key');
+              console.log('successfully got key');
 
               if (data) {
                 console.log('we should be getting item from memcached here');
@@ -112,7 +112,7 @@ app.post('/hw7', function(req, res) {
                 })
               } else {
 
-                console.log('no results from key');
+                console.log('get key was undefined');
 
                 connection.query({
                   sql: query_string,
@@ -145,6 +145,7 @@ app.post('/hw7', function(req, res) {
                       }
                     })
                   }
+                })
 
               }
 
