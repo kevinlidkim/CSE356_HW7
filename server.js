@@ -5,7 +5,7 @@ var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
 var fs = require("fs");
 
-var port = process.env.PORT || 3000; // set our port
+var port = process.env.PORT || 80; // set our port
 
 
 // get all data/stuff of the body (POST) parameters
@@ -37,9 +37,9 @@ connection.connect(function(err) {
 });
 
 var Memcached = require('memcached');
-var memcached = new Memcached('localhost:3306');
+var memcached = new Memcached('localhost:11211');
 
-memcached.connect('localhost:3306', function( err, conn ){
+memcached.connect('localhost:11211', function( err, conn ){
   if (err) {
     console.log(err);
   } else {
