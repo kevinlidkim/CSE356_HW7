@@ -30,12 +30,13 @@ var connection = mysql.createConnection({
 var Memcached = require('memcached');
 var memcached = new Memcached('127.0.0.1:11211');
 
-memcached.connect('127.0.0.1:11211', function( err, conn ){
+connection.connect(function(err) {
   if (err) {
-    console.log(err);
-  } else {
-    console.log( conn.server );
+    console.error('error connecting: ' + err.stack);
+    return;
   }
+
+  console.log('connected as id ' + connection.threadId);
 });
 
 var query_string = 'SELECT AVG(comm_rate), AVG(ind_rate), AVG(res_rate) FROM electric WHERE `state` = ? AND `service_type` = ?'
