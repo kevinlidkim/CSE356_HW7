@@ -56,28 +56,13 @@ app.post('/hw7', function(req, res) {
   if (req.body.state) {
     if (req.body.service_type) {
 
-      memcached.touch(key, 10, function(err) {
+      memcached.touch(key, 60, function(err) {
         if (err) {
           console.log(err);
 
-          connection.query({
-            sql: query_string,
-            values: [req.body.state, req.body.service_type]
-          }, function(error, results, fields) {
-            if (error) {
-              console.log(error);
-              return res.status(500).json({
-                status: 'error',
-                error: 'failed to query'
-              })
-            } else {
-              return res.status(200).json({
-                status: 'OK',
-                comm_rate_avg: results[0]['AVG(comm_rate)'],
-                ind_rate_avg: results[0]['AVG(ind_rate)'],
-                res_rate_avg: results[0]['AVG(res_rate)']
-              })
-            }
+          return res.status(500).json({
+            status: 'error',
+            error: 'memcached error'
           })
 
         } else {
@@ -92,17 +77,30 @@ app.post('/hw7', function(req, res) {
                 values: [req.body.state, req.body.service_type]
               }, function(error, results, fields) {
                 if (error) {
+                  console.log('error querying mysql');
                   console.log(error);
                   return res.status(500).json({
                     status: 'error',
                     error: 'failed to query'
                   })
                 } else {
-                  return res.status(200).json({
-                    status: 'OK',
-                    comm_rate_avg: results[0]['AVG(comm_rate)'],
-                    ind_rate_avg: results[0]['AVG(ind_rate)'],
-                    res_rate_avg: results[0]['AVG(res_rate)']
+                  var obj = results[0];
+                  memcached.set(key, obj, 60, function(err_set) {
+                    if (err_set) {
+                      console.log('error setting key');
+                      console.log(err_set)
+                      return res.status(500).json({
+                        status: 'error',
+                        error: 'error setting key'
+                      })
+                    } else {
+                      return res.status(200).json({
+                        status: 'OK',
+                        comm_rate_avg: results[0]['AVG(comm_rate)'],
+                        ind_rate_avg: results[0]['AVG(ind_rate)'],
+                        res_rate_avg: results[0]['AVG(res_rate)']
+                      })
+                    }
                   })
                 }
               })
@@ -111,24 +109,9 @@ app.post('/hw7', function(req, res) {
               console.log(data);
               console.log('we should be getting item from memcached here');
 
-              connection.query({
-                sql: query_string,
-                values: [req.body.state, req.body.service_type]
-              }, function(error, results, fields) {
-                if (error) {
-                  console.log(error);
-                  return res.status(500).json({
-                    status: 'error',
-                    error: 'failed to query'
-                  })
-                } else {
-                  return res.status(200).json({
-                    status: 'OK',
-                    comm_rate_avg: results[0]['AVG(comm_rate)'],
-                    ind_rate_avg: results[0]['AVG(ind_rate)'],
-                    res_rate_avg: results[0]['AVG(res_rate)']
-                  })
-                }
+              return res.status(200).json({
+                status: 'OK',
+                data: data
               })
 
             }
