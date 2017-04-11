@@ -109,7 +109,9 @@ app.post('/hw7', function(req, res) {
                 console.log(data);
                 return res.status(200).json({
                   status: 'OK',
-                  data: data
+                  comm_rate_avg: data['AVG(comm_rate)'],
+                  ind_rate_avg: data['AVG(ind_rate)'],
+                  res_rate_avg: data['AVG(res_rate)']
                 })
               } else {
 
