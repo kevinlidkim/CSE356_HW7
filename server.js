@@ -37,9 +37,9 @@ connection.connect(function(err) {
 });
 
 var Memcached = require('memcached');
-var memcached = new Memcached('localhost:11211');
+var memcached = new Memcached('127.0.0.1:11211');
 
-memcached.connect('localhost:11211', function( err, conn ){
+memcached.connect('127.0.0.1:11211', function( err, conn ){
   if (err) {
     console.log(err);
   } else {
@@ -56,42 +56,86 @@ app.post('/hw7', function(req, res) {
   if (req.body.state) {
     if (req.body.service_type) {
 
-      // memcached.touch(key, 10, function(err) {
-      //   if (err) {
-      //     console.log(err);
-      //   } else {
-      //     console.log('we made it');
-      //     memcached.get(key, function(error, data) {
-      //       if (error) {
-      //         console.log(error);
-      //       } else {
-      //         console.log(data);
+      memcached.touch(key, 10, function(err) {
+        if (err) {
+          console.log(err);
 
-      //       }
-      //     })
-      //   }
-      // })
-
-
-      connection.query({
-        sql: query_string,
-        values: [req.body.state, req.body.service_type]
-      }, function(error, results, fields) {
-        if (error) {
-          console.log(error);
-          return res.status(500).json({
-            status: 'error',
-            error: 'failed to query'
+          connection.query({
+            sql: query_string,
+            values: [req.body.state, req.body.service_type]
+          }, function(error, results, fields) {
+            if (error) {
+              console.log(error);
+              return res.status(500).json({
+                status: 'error',
+                error: 'failed to query'
+              })
+            } else {
+              return res.status(200).json({
+                status: 'OK',
+                comm_rate_avg: results[0]['AVG(comm_rate)'],
+                ind_rate_avg: results[0]['AVG(ind_rate)'],
+                res_rate_avg: results[0]['AVG(res_rate)']
+              })
+            }
           })
+
         } else {
-          return res.status(200).json({
-            status: 'OK',
-            comm_rate_avg: results[0]['AVG(comm_rate)'],
-            ind_rate_avg: results[0]['AVG(ind_rate)'],
-            res_rate_avg: results[0]['AVG(res_rate)']
+          console.log('we made it into memcache?');
+          memcached.get(key, function(error, data) {
+            if (error) {
+              console.log('error getting key');
+              console.log(error);
+
+              connection.query({
+                sql: query_string,
+                values: [req.body.state, req.body.service_type]
+              }, function(error, results, fields) {
+                if (error) {
+                  console.log(error);
+                  return res.status(500).json({
+                    status: 'error',
+                    error: 'failed to query'
+                  })
+                } else {
+                  return res.status(200).json({
+                    status: 'OK',
+                    comm_rate_avg: results[0]['AVG(comm_rate)'],
+                    ind_rate_avg: results[0]['AVG(ind_rate)'],
+                    res_rate_avg: results[0]['AVG(res_rate)']
+                  })
+                }
+              })
+
+            } else {
+              console.log(data);
+              console.log('we should be getting item from memcached here');
+
+              connection.query({
+                sql: query_string,
+                values: [req.body.state, req.body.service_type]
+              }, function(error, results, fields) {
+                if (error) {
+                  console.log(error);
+                  return res.status(500).json({
+                    status: 'error',
+                    error: 'failed to query'
+                  })
+                } else {
+                  return res.status(200).json({
+                    status: 'OK',
+                    comm_rate_avg: results[0]['AVG(comm_rate)'],
+                    ind_rate_avg: results[0]['AVG(ind_rate)'],
+                    res_rate_avg: results[0]['AVG(res_rate)']
+                  })
+                }
+              })
+
+            }
           })
         }
       })
+
 
     } else {
       return res.status(500).json({
